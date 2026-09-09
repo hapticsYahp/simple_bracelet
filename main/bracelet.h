@@ -1,5 +1,6 @@
 
 #include "driver/ledc.h"
+#include "poma_core.h"
 
 #define LEDC_TIMER LEDC_TIMER_0
 #define LEDC_MODE LEDC_LOW_SPEED_MODE // or LEDC_HIGH_SPEED_MODE
@@ -96,19 +97,19 @@ getIntensity, setIntensity
 getMotorConfig,setMotorConfig
 getEnabledMotors, setEnabledMotors
 */
-void getMotorCount(int sockfd, char *parameters)
+void getMotorCount( WRITERFUNC, char *parameters)
 {
     char response[10];
     sprintf(response, "%d\n", enabled_motor_count(bracelet));
-    write(sockfd, response, strlen(response));
+    writer( response, strlen(response));
 }
 
-void setMotorCount(int sockfd, char *parameters)
+void setMotorCount(WRITERFUNC, char *parameters)
 {
-    write(sockfd, DONE_MSG, strlen(DONE_MSG));
+    writer( DONE_MSG, strlen(DONE_MSG));
 }
 
-void setIntensity(int sockfd, char *parameters)
+void setIntensity(WRITERFUNC, char *parameters)
 {
     // params is a list of comma separated integers
     char **params;
@@ -132,7 +133,7 @@ void setIntensity(int sockfd, char *parameters)
         }
         // set intensity for each motor
         if (idx != enabled_motor_count(bracelet) || check_params(params, idx) == 0)
-            write(sockfd, PARAMS_ERROR, strlen(PARAMS_ERROR));
+            writer( PARAMS_ERROR, strlen(PARAMS_ERROR));
         else
         {
             enabled_motor_indexes(bracelet, enabled_indexes);
@@ -143,13 +144,13 @@ void setIntensity(int sockfd, char *parameters)
                 //ESP_LOGI(TAG, "enabled_index: %d intensity:%d", enabled_indexes[i], intensity);
                 free(params[i]);
             }
-            write(sockfd, DONE_MSG, strlen(DONE_MSG));
+            writer( DONE_MSG, strlen(DONE_MSG));
         }
         free(params);
     }
 }
 
-void getIntensity(int sockfd, char *parameters)
+void getIntensity(WRITERFUNC, char *parameters)
 {
     char datum[10];
     int i;
@@ -159,11 +160,11 @@ void getIntensity(int sockfd, char *parameters)
     {
         sprintf(datum, "%d,", (intensityFromDutyCycle(bracelet, bracelet.motor[i].channel_t.duty)));
 
-        write(sockfd, datum, strlen(datum));
+        writer( datum, strlen(datum));
     }
     sprintf(datum, "%d\n", (intensityFromDutyCycle(bracelet, bracelet.motor[i].channel_t.duty)));
 
-    write(sockfd, datum, strlen(datum));
+    writer( datum, strlen(datum));
 }
 
 void addMotor(Bracelet *brclt, int motor_index, ledc_channel_t channel, int gpio_num)
@@ -188,7 +189,7 @@ void removeMotor(Bracelet *brclt, int gpio_num)
   // esp_err_t ledc_stop(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t idle_level)
 }
 
-void setMotorConfig(int sockfd, char *parameters)
+void setMotorConfig(WRITERFUNC, char *parameters)
 {
     //= setMotorCofig gpio_num,status
     // gpio = {0,1,2,3,4,5} status={0,1}
@@ -208,26 +209,26 @@ void setMotorConfig(int sockfd, char *parameters)
     // configure one gpio: two parameters
 
     if (idx != 2)
-        write(sockfd, SET_MOTOR_CONFIG_ERROR, strlen(SET_MOTOR_CONFIG_ERROR));
+        writer( SET_MOTOR_CONFIG_ERROR, strlen(SET_MOTOR_CONFIG_ERROR));
     else
     {
         bracelet.motor[atoi(params[0])].enabled = atoi(params[1]);
-        write(sockfd, DONE_MSG, strlen(DONE_MSG));
+        writer( DONE_MSG, strlen(DONE_MSG));
         free(params[0]);
         free(params[1]);
     }
     free(params);
 }
 
-void getMotorConfig(int sockfd, char *parameters)
+void getMotorConfig(WRITERFUNC, char *parameters)
 {
     //? getMotorCofig gpio_num
     // returns status for that gpio_num
 
-    write(sockfd, NOT_IMPLEMENTED_MSG, strlen(NOT_IMPLEMENTED_MSG));
+    writer( NOT_IMPLEMENTED_MSG, strlen(NOT_IMPLEMENTED_MSG));
 }
 
-void getEnabledMotors(int sockfd, char *parameters)
+void getEnabledMotors(WRITERFUNC, char *parameters)
 {
     char datum[10];
     int i;
@@ -237,13 +238,13 @@ void getEnabledMotors(int sockfd, char *parameters)
     {
         sprintf(datum, "%d,", bracelet.motor[i].enabled);
 
-        write(sockfd, datum, strlen(datum));
+        writer( datum, strlen(datum));
     }
     sprintf(datum, "%d\n", bracelet.motor[i].enabled);
 
-    write(sockfd, datum, strlen(datum));
+    writer( datum, strlen(datum));
 }
-void setEnabledMotors(int sockfd, char *parameters)
+void setEnabledMotors(WRITERFUNC, char *parameters)
 {
     // params is a list of comma separated booleans (0|1) to disable|enable availablemotors
     char **params;
@@ -269,7 +270,7 @@ void setEnabledMotors(int sockfd, char *parameters)
     }
 
     if (idx != bracelet.motor_count)
-        write(sockfd, PARAMS_ERROR, strlen(PARAMS_ERROR));
+        writer( PARAMS_ERROR, strlen(PARAMS_ERROR));
     else
     {
         for (int i = 0; i < idx; i++)
@@ -280,7 +281,7 @@ void setEnabledMotors(int sockfd, char *parameters)
 
             free(params[i]);
         }
-        write(sockfd, DONE_MSG, strlen(DONE_MSG));
+        writer( DONE_MSG, strlen(DONE_MSG));
     }
     free(params);
 }

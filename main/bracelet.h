@@ -307,17 +307,32 @@ void initializeHaptic(Bracelet *brclt)
     ESP_ERROR_CHECK(ledc_timer_config(&(brclt->timer)));
 
     /*addMotor(Bracelet *brclt, ledc_channel_t channel, int gpio_num)*/
-    addMotor(brclt, 0, LEDC_CHANNEL_0, 18);
+    
+    #ifndef CONFIG_SEVILLA
+#define MOTOR_1_GPIO 18
+#define MOTOR_2_GPIO 20
+#define MOTOR_3_GPIO 0
+#define MOTOR_4_GPIO 2
+#define MOTOR_5_GPIO 16
+#define MOTOR_6_GPIO 23
+    addMotor(brclt, 0, LEDC_CHANNEL_0, MOTOR_1_GPIO);
+    addMotor(brclt, 1, LEDC_CHANNEL_1, MOTOR_2_GPIO);
+    addMotor(brclt, 2, LEDC_CHANNEL_2, MOTOR_3_GPIO);
+    addMotor(brclt, 3, LEDC_CHANNEL_3, MOTOR_4_GPIO);
+    addMotor(brclt, 4, LEDC_CHANNEL_4, MOTOR_5_GPIO);
+    addMotor(brclt, 5, LEDC_CHANNEL_5, MOTOR_6_GPIO);
+#else
+#define MOTOR_1_GPIO 3
+#define MOTOR_2_GPIO 4
+#define MOTOR_3_GPIO 5
+#define MOTOR_4_GPIO 7
+    addMotor(brclt, 0, LEDC_CHANNEL_0, MOTOR_1_GPIO);
+    addMotor(brclt, 1, LEDC_CHANNEL_1, MOTOR_2_GPIO);
+    addMotor(brclt, 2, LEDC_CHANNEL_2, MOTOR_3_GPIO);
+    addMotor(brclt, 3, LEDC_CHANNEL_3, MOTOR_4_GPIO);
+#endif
 
-    addMotor(brclt, 1, LEDC_CHANNEL_1, 20);
 
-    addMotor(brclt, 2, LEDC_CHANNEL_2, 0);
-
-    addMotor(brclt, 3, LEDC_CHANNEL_3, 2);
-
-    addMotor(brclt, 4, LEDC_CHANNEL_4, 16);
-
-    addMotor(brclt, 5, LEDC_CHANNEL_5, 23);
 
     brclt->max_duty = (1 << LEDC_DUTY_RES) - 1;
 

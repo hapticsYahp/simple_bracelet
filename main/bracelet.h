@@ -73,7 +73,7 @@ void enabled_motor_indexes(Bracelet brclt, int *indexes)
         if (brclt.motor[i].enabled == 1)
         {
             indexes[idx++] = i;
-            // ESP_LOGI(TAG, "enabled_index: %d", i);
+            //ESP_LOGI(TAG, "enabled_index: %d", i);
         }
     }
 }
@@ -116,7 +116,7 @@ void setIntensity(WRITERFUNC, char *parameters)
     int idx = 0;
     int enabled_indexes[MOTOR_COUNT];
     int intensity;
-
+    printf("setIntensity parameters %s\n", parameters);
     params = (char **)malloc(MOTOR_COUNT * sizeof(int *));
     if (params == NULL)
         ESP_LOGE(TAG, "SetIntensity allocation fails");
@@ -137,6 +137,7 @@ void setIntensity(WRITERFUNC, char *parameters)
         else
         {
             enabled_motor_indexes(bracelet, enabled_indexes);
+            //printf("setIntensity idx: %d\n",idx);
             for (int i = 0; i < idx; i++)
             {
                 intensity = atoi(params[i]);
@@ -154,11 +155,13 @@ void getIntensity(WRITERFUNC, char *parameters)
 {
     char datum[10];
     int i;
-
+    int enabled_indexes[MOTOR_COUNT];
+    //printf("enabled motor count: %d\n", enabled_motor_count(bracelet));
     // params is a list of comma separated integers
-    for (i = 0; i < enabled_motor_count(bracelet) - 1; i++)
+    enabled_motor_indexes(bracelet, enabled_indexes);
+    for (i = 0; i < enabled_motor_count(bracelet) ; i++)
     {
-        sprintf(datum, "%d,", (intensityFromDutyCycle(bracelet, bracelet.motor[i].channel_t.duty)));
+        sprintf(datum, "%d,", (intensityFromDutyCycle(bracelet, bracelet.motor[enabled_indexes[i]].channel_t.duty)));
 
         writer( datum, strlen(datum));
     }
@@ -233,8 +236,8 @@ void getEnabledMotors(WRITERFUNC, char *parameters)
     char datum[10];
     int i;
 
-    // params is a list of comma separated integers
-    for (i = 0; i < bracelet.motor_count - 1; i++)
+    
+    for (i = 0; i < bracelet.motor_count ; i++)
     {
         sprintf(datum, "%d,", bracelet.motor[i].enabled);
 

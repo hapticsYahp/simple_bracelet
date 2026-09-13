@@ -2,7 +2,24 @@
 #include "driver/ledc.h"
 #include "poma_core.h"
 
-// #define CONFIG_SEVILLA
+#define CONFIG_SEVILLA
+
+#ifdef CONFIG_SEVILLA
+#define MOTOR_COUNT 4
+#define MOTOR_1_GPIO 3
+#define MOTOR_2_GPIO 4
+#define MOTOR_3_GPIO 5
+#define MOTOR_4_GPIO 7
+#else
+#define MOTOR_COUNT 6
+#define MOTOR_1_GPIO 18
+#define MOTOR_2_GPIO 20
+#define MOTOR_3_GPIO 0
+#define MOTOR_4_GPIO 2
+#define MOTOR_5_GPIO 16
+#define MOTOR_6_GPIO 23
+#endif
+
 
 #define LEDC_TIMER LEDC_TIMER_0
 #define LEDC_MODE LEDC_LOW_SPEED_MODE // or LEDC_HIGH_SPEED_MODE
@@ -16,7 +33,6 @@
 #define NOT_IMPLEMENTED_MSG "Not implemented yet\n"
 #define DONE_MSG "done\n"
 
-#define MOTOR_COUNT 6
 
 static const char *TAGb = "bracelet";
 
@@ -57,7 +73,6 @@ int enabled_motor_count(Bracelet bracelet)
 
     for (int idx = 0; idx < bracelet.motor_count; idx++)
         count += bracelet.motor[idx].enabled; // enabled == 1, disabled == 0
-    
     //ESP_LOGI(TAG, "Enabled motor count");
     return count;
 }
@@ -75,7 +90,7 @@ void enabled_motor_indexes(Bracelet brclt, int *indexes)
         if (brclt.motor[i].enabled == 1)
         {
             indexes[idx++] = i;
-            // ESP_LOGI(TAG, "enabled_index: %d", i);
+            //ESP_LOGI(TAG, "enabled_index: %d", i);
         }
     }
 }
@@ -118,7 +133,7 @@ void setIntensity(WRITERFUNC, char *parameters)
     int idx = 0;
     int enabled_indexes[MOTOR_COUNT];
     int intensity;
-
+    printf("setIntensity parameters %s\n", parameters);
     params = (char **)malloc(MOTOR_COUNT * sizeof(int *));
     if (params == NULL)
         ESP_LOGE(TAG, "SetIntensity allocation fails");
@@ -139,6 +154,7 @@ void setIntensity(WRITERFUNC, char *parameters)
         else
         {
             enabled_motor_indexes(bracelet, enabled_indexes);
+            //printf("setIntensity idx: %d\n",idx);
             for (int i = 0; i < idx; i++)
             {
                 intensity = atoi(params[i]);
@@ -156,11 +172,13 @@ void getIntensity(WRITERFUNC, char *parameters)
 {
     char datum[10];
     int i;
-
+    int enabled_indexes[MOTOR_COUNT];
+    //printf("enabled motor count: %d\n", enabled_motor_count(bracelet));
     // params is a list of comma separated integers
-    for (i = 0; i < enabled_motor_count(bracelet) - 1; i++)
+    enabled_motor_indexes(bracelet, enabled_indexes);
+    for (i = 0; i < enabled_motor_count(bracelet) ; i++)
     {
-        sprintf(datum, "%d,", (intensityFromDutyCycle(bracelet, bracelet.motor[i].channel_t.duty)));
+        sprintf(datum, "%d,", (intensityFromDutyCycle(bracelet, bracelet.motor[enabled_indexes[i]].channel_t.duty)));
 
         writer( datum, strlen(datum));
     }
@@ -235,8 +253,7 @@ void getEnabledMotors(WRITERFUNC, char *parameters)
     char datum[10];
     int i;
 
-    // params is a list of comma separated integers
-    for (i = 0; i < bracelet.motor_count - 1; i++)
+    for (i = 0; i < bracelet.motor_count ; i++)
     {
         sprintf(datum, "%d,", bracelet.motor[i].enabled);
 
@@ -246,6 +263,7 @@ void getEnabledMotors(WRITERFUNC, char *parameters)
 
     writer( datum, strlen(datum));
 }
+
 void setEnabledMotors(WRITERFUNC, char *parameters)
 {
     // params is a list of comma separated booleans (0|1) to disable|enable availablemotors
@@ -258,7 +276,7 @@ void setEnabledMotors(WRITERFUNC, char *parameters)
     }
 
     params = (char **)malloc(MOTOR_COUNT * sizeof(int *));
-    
+
     if(params ==NULL)
         ESP_LOGE(TAG, "set enabled motors. unable to allocate memory");
     else{
@@ -277,7 +295,6 @@ void setEnabledMotors(WRITERFUNC, char *parameters)
     {
         for (int i = 0; i < idx; i++)
         {
-            
             bracelet.motor[i].enabled = atoi(params[i]);
             //ESP_LOGI(TAG, "set enabled motors[%d] %d", i, bracelet.motor[i].enabled);
 
@@ -306,12 +323,6 @@ void initializeHaptic(Bracelet *brclt)
     ESP_ERROR_CHECK(ledc_timer_config(&(brclt->timer)));
 
 #ifndef CONFIG_SEVILLA
-#define MOTOR_1_GPIO 18
-#define MOTOR_2_GPIO 20
-#define MOTOR_3_GPIO 0
-#define MOTOR_4_GPIO 2
-#define MOTOR_5_GPIO 16
-#define MOTOR_6_GPIO 23
     addMotor(brclt, 0, LEDC_CHANNEL_0, MOTOR_1_GPIO);
     addMotor(brclt, 1, LEDC_CHANNEL_1, MOTOR_2_GPIO);
     addMotor(brclt, 2, LEDC_CHANNEL_2, MOTOR_3_GPIO);
@@ -319,20 +330,16 @@ void initializeHaptic(Bracelet *brclt)
     addMotor(brclt, 4, LEDC_CHANNEL_4, MOTOR_5_GPIO);
     addMotor(brclt, 5, LEDC_CHANNEL_5, MOTOR_6_GPIO);
 #else
-#define MOTOR_1_GPIO 3
-#define MOTOR_2_GPIO 4
-#define MOTOR_3_GPIO 5
-#define MOTOR_4_GPIO 7
     addMotor(brclt, 0, LEDC_CHANNEL_0, MOTOR_1_GPIO);
     addMotor(brclt, 1, LEDC_CHANNEL_1, MOTOR_2_GPIO);
     addMotor(brclt, 2, LEDC_CHANNEL_2, MOTOR_3_GPIO);
     addMotor(brclt, 3, LEDC_CHANNEL_3, MOTOR_4_GPIO);
 #endif
 
+
     brclt->max_duty = (1 << LEDC_DUTY_RES) - 1;
 
     //    ESP_LOGI(TAGb, "brclt->motor_count: %d ",  brclt->motor_count);
-
     //    ESP_LOGI(TAGb, "bracelet.motor_count: %d ",  bracelet.motor_count);
 
     for (int idx = 0; idx < brclt->motor_count; idx++)

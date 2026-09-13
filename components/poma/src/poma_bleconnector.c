@@ -263,7 +263,7 @@ gatt_svr_chr_access_rx(uint16_t conn_handle, uint16_t attr_handle,
         return BLE_ATT_ERR_INVALID_ATTR_VALUE_LEN;
     }
 
-    char rx_buf[POMA_MAX_PAYLOAD + 1];   /* +1 for null terminator, no more static */
+    char rx_buf[POMA_MAX_PAYLOAD + 1]; /* +1 for null terminator, no more static */
     uint16_t out_len = 0;
 
     int rc = ble_hs_mbuf_to_flat(ctxt->om, rx_buf, POMA_MAX_PAYLOAD, &out_len);
@@ -271,7 +271,7 @@ gatt_svr_chr_access_rx(uint16_t conn_handle, uint16_t attr_handle,
     {
         return BLE_ATT_ERR_UNLIKELY;
     }
-    rx_buf[out_len] = '\0';   /* now safe as a C string */
+    rx_buf[out_len] = '\0'; /* now safe as a C string */
 
     printf("rx_buf %s out_len: %d \n", rx_buf, out_len);
 
@@ -495,7 +495,6 @@ static int buffered_blewriter(const void *response, size_t rsp_size)
         else
         {
             ESP_LOGI(TAG, "buffered_blewriter OVERFLOW Response: >%s< : %u ", (char *)response, rsp_size);
-            idx = 0;
         }
     }
     return 1;
@@ -512,6 +511,7 @@ PoMA_BLE_SPEC *createPoMABLEConnectSpec(PoMA_BLE_SPEC *spec, uint8_t portno, int
 {
     esp_err_t ret = ESP_OK;
     int rc;
+    int name_size;
 
     if (is_nvs_initialized() == false)
         ret = nvs_flash_init();
@@ -552,7 +552,18 @@ PoMA_BLE_SPEC *createPoMABLEConnectSpec(PoMA_BLE_SPEC *spec, uint8_t portno, int
         return spec;
     }
 
-    rc = ble_svc_gap_device_name_set("PoMA-Srv-ESP32");
+    //248 is the max size...'\0' at the end helps it check if device_name was set
+    spec->device_name[29] = '\0'; 
+    name_size = strlen(spec->device_name);
+    printf("name_size %d \n", name_size);
+
+    if ( name_size >=29)
+        rc = ble_svc_gap_device_name_set("PoMA-BLE");
+    else
+    {
+        rc = ble_svc_gap_device_name_set((const char *)spec->device_name);
+    }
+
     if (rc != 0)
     {
         ESP_LOGE(TAG, "failed to set device name; rc=%d", rc);

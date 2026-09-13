@@ -82,8 +82,10 @@ void app_main(void)
     addTopic(topicHead, createTopic("enabled_motors", getEnabledMotors, setEnabledMotors));
 
     PoMA_BLE_SPEC *bleSpec = malloc(sizeof(PoMA_BLE_SPEC));
+    strcpy(bleSpec->device_name,"yahp!_ble");
+
     bleSpec = createPoMABLEConnectSpec(bleSpec, 1, SINGLE_USER);
 
-    xTaskCreate(ble_server_task, "ble_server", 4096 * 2, (void *)bleSpec, 5, NULL);
+    xTaskCreate(ble_server_task, "ble_server", 4096 * 3, (void *)bleSpec, 5, NULL);
 
 }
